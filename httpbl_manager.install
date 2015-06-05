@@ -73,6 +73,10 @@ function httpbl_manager_install() {
  * Restore httpbl table to its native schema.
  */
 function httpbl_manager_uninstall() {
+  // @TODO Important!
+  // Before reverting back to original httpbl, must check for duplicate IPs,
+  // otherwise there will be duplicate keys in the reverted table.
+
   db_change_field('httpbl', 'hostname', 'hostname',
     array('type' => 'varchar', 'length' => '128', 'not null' => FALSE, 'description' => t('Primary key: Hostname (IP address)')));
  
