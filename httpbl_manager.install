@@ -1,0 +1,96 @@
+<?php
+/**
+ * @file
+ * Installation functions for httpbl_manager.
+ */
+
+/**
+ * Implements hook_schema_alter().
+ *
+ * Alter table from httpbl module to add fields required
+ * to use table for httpbl entities.
+ */
+function httpbl_manager_schema_alter(&$schema) {
+  if (isset($schema['httpbl'])) {
+
+    $schema['httpbl']['fields']['httpbl_id'] = array(
+      'description' => t('The primary ID for a managed httpbl entity.'),
+      'type' => 'int',
+      'not null' => TRUE,
+      'default' => 0,
+    );
+    $schema['httpbl']['fields']['type'] = array(
+      'description' => t('The module defined type of this managed httpbl entity.'),
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => TRUE,
+      'default' => 'httpbl',
+    );
+    $schema['httpbl']['fields']['created'] = array(
+      'description' => t('The Unix creation timestamp for the managed httpbl entity.'),
+      'type' => 'int',
+      'not null' => TRUE,
+      'default' => 0,
+    );
+    $schema['httpbl']['fields']['modified'] = array(
+      'description' => t('The Unix modified timestamp for the managed httpbl entity.'),
+      'type' => 'int',
+      'not null' => TRUE,
+      'default' => 0,
+    );
+
+    return $schema;
+  }
+}
+
+/**
+ * Implements hook_install().
+ */
+function httpbl_manager_install() {
+  db_change_field('httpbl', 'hostname', 'hostname',
+    array('type' => 'varchar', 'length' => '128', 'not null' => FALSE, 'description' => st('Hostname (IP address)')));
+ 
+  $schema['httpbl'] = array();
+  httpbl_manager_schema_alter($schema);
+  foreach ($schema['httpbl']['fields'] as $name => $spec) {
+    db_add_field('httpbl', $name, $spec);
+  }
+
+  db_drop_primary_key('httpbl');
+  db_change_field('httpbl', 'httpbl_id', 'httpbl_id', array(
+    'type' => 'serial',
+    'unsigned' => TRUE,
+    'not null' => TRUE,
+    'description' => st('The primary ID for a managed httpbl entity.')),
+    array('primary key' => array('httpbl_id'))
+  );
+
+}
+
+/**
+ * Implements hook_uninstall().
+ * 
+ * Restore httpbl table to its native schema.
+ */
+function httpbl_manager_uninstall() {
+  db_change_field('httpbl', 'hostname', 'hostname',
+    array('type' => 'varchar', 'length' => '128', 'not null' => FALSE, 'description' => t('Primary key: Hostname (IP address)')));
+ 
+  $schema['httpbl'] = array();
+  httpbl_manager_schema_alter($schema);
+  foreach ($schema['httpbl']['fields'] as $name => $spec) {
+    db_drop_field('httpbl', $name);
+  }
+
+  db_drop_primary_key('httpbl');
+  db_change_field('httpbl', 'hostname', 'hostname', array(
+    'type' => 'varchar',
+    'length' => '128',
+    'not null' => FALSE,
+    'description' => t('Primary key: Hostname (IP address)')),
+    array('primary key' => array('hostname'))
+  );
+  db_delete('variable')
+    ->condition('name', 'httpbl_manager%%', 'LIKE')
+    ->execute();
+}

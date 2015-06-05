@@ -1,0 +1,107 @@
+<?php
+/**
+ * @file
+ * Code for the httpbl_manager module.
+ */
+
+/**
+ * Implementation of hook_views_api().
+ */
+function httpbl_manager_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'httpbl_manager') . '/views',
+  );
+}
+
+function httpbl_manager_entity_info() {
+  $return = array(
+    'httpbl' => array(
+      'label' => t('Managed http:BL IP'),
+      'plural label' => t('Managed http:BL IPs'),
+      'entity class' => 'Entity',
+      'controller class' => 'EntityAPIController',
+      'base table' => 'httpbl',
+      'uri callback' => 'node_uri',
+      'fieldable' => FALSE,
+      'entity keys' => array(
+        'id' => 'httpbl_id',
+        'bundle' => 'type',
+        'label' => 'hostname',
+      ),
+      'bundle keys' => array(
+        'bundle' => 'type',
+      ),
+      'bundles' => array(
+        'httpbl_ip' => array(
+          'label' => t('http:BL Managed IP', array(), array('context' => 'a managed IP.')),
+        ),
+      ),
+      // Use the default label() and uri() functions
+      'load hook' => 'entity_load',
+//      'label callback' => 'entity_class_label',
+      'access callback' => 'managed_ips_access',
+      'uri callback' => 'entity_class_uri',
+      'module' => 'httpbl_manager',
+//      'views controller class' => 'EntityDefaultViewsController',
+      'admin ui' => array(
+        'path' => 'admin/structure/httpbl-managed-ips',
+        'access callback' => 'managed_ips_access',
+      ),
+    ),
+  );
+
+  return $return;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function httpbl_manager_permission() {
+  // We set up permisssions to manage entity types, manage all entities and the
+  // permissions for each individual entity
+  $permissions = array(
+    'admin httpbl manager ips' => array(
+      'title' => t('Administer Managed IPs'),
+      'description' => t('Administer (create, update, delete) httpBL white, grey and blacklisted IPs.'),
+      'restrict access' => TRUE,
+    ),
+  );
+
+  return $permissions;
+}
+
+/**
+ * Access callback for HttpBL Manager.
+ *
+ * Determines whether the given user has access to HttpBL Manager functionality.
+ *
+ * @param $op
+ *   The operation being performed. One of 'view'
+ *   or just 'edit' (being the same as 'create' or 'update').
+ * @param $type
+ *   Optionally a type to check access for. If nothing is
+ *   given, access for all types is determined.
+ * @param $account
+ *   The user to check for. Leave it to NULL to check for the global user.
+ * @return boolean
+ *   Whether access is allowed or not.
+ */
+function managed_ips_access($op, $type = NULL, $account = NULL) {
+  if (user_access('admin httpbl manager ips', $account)) {
+    return TRUE;
+  }
+  if (isset($type) && isset($type_name)) {
+    $op = ($op == 'view') ? 'view' : 'edit';
+    if (user_access("$op any $type_name trail", $account)) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Implements hook_menu_alter(&$items).
+ */
+function httpbl_manager_menu_alter(&$items) {
+}
