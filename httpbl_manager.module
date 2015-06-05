@@ -22,7 +22,6 @@ function httpbl_manager_entity_info() {
       'entity class' => 'Entity',
       'controller class' => 'EntityAPIController',
       'base table' => 'httpbl',
-      'uri callback' => 'node_uri',
       'fieldable' => FALSE,
       'entity keys' => array(
         'id' => 'httpbl_id',
@@ -37,13 +36,12 @@ function httpbl_manager_entity_info() {
           'label' => t('http:BL Managed IP', array(), array('context' => 'a managed IP.')),
         ),
       ),
-      // Use the default label() and uri() functions
       'load hook' => 'entity_load',
-//      'label callback' => 'entity_class_label',
+      'label callback' => 'entity_class_label',
       'access callback' => 'managed_ips_access',
       'uri callback' => 'entity_class_uri',
       'module' => 'httpbl_manager',
-//      'views controller class' => 'EntityDefaultViewsController',
+//      'views controller class' => '`',
       'admin ui' => array(
         'path' => 'admin/structure/httpbl-managed-ips',
         'access callback' => 'managed_ips_access',
