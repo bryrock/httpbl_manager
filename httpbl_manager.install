@@ -26,6 +26,26 @@ function httpbl_manager_schema_alter(&$schema) {
       'not null' => TRUE,
       'default' => 'httpbl',
     );
+    $schema['httpbl']['fields']['language'] = array(
+      'description' => t('Language support.'),
+      'type' => 'varchar',
+      'length' => 12,
+      'not null' => TRUE,
+      'default' => '',
+    );
+    $schema['httpbl']['fields']['domain'] = array(
+      'description' => t('A domain or user to identify this host.'),
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => TRUE,
+      'default' => '',
+    );
+    $schema['httpbl']['fields']['uid'] = array(
+      'description' => t('The human user who added this IP.'),
+      'type' => 'int',
+      'not null' => TRUE,
+      'default' => 0,
+    );
     $schema['httpbl']['fields']['created'] = array(
       'description' => t('The Unix creation timestamp for the managed httpbl entity.'),
       'type' => 'int',
@@ -56,7 +76,11 @@ function httpbl_manager_install() {
     db_add_field('httpbl', $name, $spec);
   }
 
+  // Drop primary key before changing it.
   db_drop_primary_key('httpbl');
+  // Alter indexes because original httpbl primary will be changed.
+  db_add_index('httpbl', 'hostname', array('hostname'));
+  // Make new primary id the primary key.
   db_change_field('httpbl', 'httpbl_id', 'httpbl_id', array(
     'type' => 'serial',
     'unsigned' => TRUE,
@@ -86,7 +110,11 @@ function httpbl_manager_uninstall() {
     db_drop_field('httpbl', $name);
   }
 
+  // Drop primary key added on install.
   db_drop_primary_key('httpbl');
+  // Drop index added on install.
+  db_drop_index('httpbl', 'hostname');
+
   db_change_field('httpbl', 'hostname', 'hostname', array(
     'type' => 'varchar',
     'length' => '128',
