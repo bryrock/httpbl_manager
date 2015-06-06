@@ -109,6 +109,13 @@ function httpbl_manager_views_default_views() {
   $handler->display->display_options['fields']['views_bulk_operations']['vbo_settings']['force_single'] = 0;
   $handler->display->display_options['fields']['views_bulk_operations']['vbo_settings']['entity_load_capacity'] = '10';
   $handler->display->display_options['fields']['views_bulk_operations']['vbo_operations'] = array(
+    'action::httpbl_manager_notation_action' => array(
+      'selected' => 1,
+      'postpone_processing' => 0,
+      'skip_confirmation' => 1,
+      'override_label' => 1,
+      'label' => 'Notes',
+    ),
     'action::httpbl_manager_change_expiry_action' => array(
       'selected' => 1,
       'postpone_processing' => 0,

@@ -144,6 +144,14 @@ function httpbl_manager_action_info() {
       'behavior' => array('changes_property'),
       'triggers' => array('entity_presave'),
     ),
+    'httpbl_manager_notation_action' => array(
+      'type' => 'entity',
+      'label' => t('Add/Modify notation for a managed IP'),
+      'configurable' => TRUE,
+      'pass rows' => TRUE,
+      'behavior' => array('changes_property'),
+      'triggers' => array('entity_presave'),
+    ),
   );
 }
 
@@ -373,4 +381,81 @@ function httpbl_manager_change_expiry_action_validate($form, $form_state) {
  */
 function httpbl_manager_change_expiry_action_submit($form, $form_state) {
   return array('listed_expiry' => $form_state['values']['listed_expiry']);
+}
+
+/**
+ * Notation for a managed IP entity.
+ *
+ * @param $entity
+ *   A entity object to modify.
+ * @param $context
+ *   Array with the following elements:
+ *   the following elements:
+ *   - (nothing particularly useful, yet).
+ *
+ * @see httpbl_manager_notation_action_form()
+ * @see httpbl_manager_notation_action_validate()
+ * @see httpbl_manager_notation_action_submit()
+ * @ingroup actions
+ */
+function httpbl_manager_notation_action($entity, $context) {
+  global $user;
+
+  $notation = $context['notation'];
+  $entity->domain = $notation;
+  $entity->modified = REQUEST_TIME;
+  $entity->uid = $user->uid;
+
+  watchdog('httpbl_manager action', 'Updated @type managed ip %ip with notation.', array('@type' =>  $entity->type, '%ip' => $entity->hostname));
+}
+
+/**
+ * Generates the settings form for httpbl_manager_notation_action().
+ *
+ * @param $context
+ *   Array of additional information about what triggered the action. Includes
+ *   the following elements:
+ *   - (nothing particularly useful, yet).
+ *
+ * @see httpbl_manager_notation_action_validate()
+ * @see httpbl_manager_notation_action_submit()
+ *
+ * @ingroup forms
+ */
+function httpbl_manager_notation_action_form($entity, $context) {
+  $description = t('Use this for miscellaneous notes about an IP.  Why it\'s blocked or white-listed, the recognizable domain, etc.');
+
+  $selection = array_keys($context['selection']);
+  $selection_entity = $entity['view']->result[$selection[0]]->httpbl_id;
+
+  $this_entity = entity_load_single('httpbl', $selection_entity);
+
+  $form['notation'] = array(
+    '#type' => 'textfield',
+    '#size' => 60,
+    '#maxlength' => 128,
+    '#title' => t('Notation for this host / domain / IP.'),
+    '#default_value' => $this_entity->domain,
+    '#required' => FALSE,
+    '#description' => $description,
+  );
+
+  return $form;
+}
+
+/**
+ * Validates settings form for httpbl_manager_notation_action().
+ *
+ * @see httpbl_manager_notation_action_submit()
+ */
+function httpbl_manager_notation_action_validate($form, $form_state) {
+}
+
+/**
+ * Saves settings form for httpbl_manager_notation_action().
+ *
+ * @see httpbl_manager_notation_action_validate()
+ */
+function httpbl_manager_notation_action_submit($form, $form_state) {
+  return array('notation' => $form_state['values']['notation']);
 }
