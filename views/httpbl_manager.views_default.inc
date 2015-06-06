@@ -188,12 +188,6 @@ function httpbl_manager_views_default_views() {
       'label' => '',
     ),
   );
-  /* Field: HttpBL: http:bl ID */
-  $handler->display->display_options['fields']['httpbl_id']['id'] = 'httpbl_id';
-  $handler->display->display_options['fields']['httpbl_id']['table'] = 'httpbl';
-  $handler->display->display_options['fields']['httpbl_id']['field'] = 'httpbl_id';
-  $handler->display->display_options['fields']['httpbl_id']['label'] = 'Httpbl ID';
-  $handler->display->display_options['fields']['httpbl_id']['separator'] = '';
   /* Field: HttpBL: Host IP */
   $handler->display->display_options['fields']['hostname']['id'] = 'hostname';
   $handler->display->display_options['fields']['hostname']['table'] = 'httpbl';
@@ -239,6 +233,12 @@ function httpbl_manager_views_default_views() {
   $handler->display->display_options['fields']['modified']['hide_alter_empty'] = FALSE;
   $handler->display->display_options['fields']['modified']['date_format'] = 'short';
   $handler->display->display_options['fields']['modified']['second_date_format'] = 'long';
+  /* Field: HttpBL: http:bl ID */
+  $handler->display->display_options['fields']['httpbl_id']['id'] = 'httpbl_id';
+  $handler->display->display_options['fields']['httpbl_id']['table'] = 'httpbl';
+  $handler->display->display_options['fields']['httpbl_id']['field'] = 'httpbl_id';
+  $handler->display->display_options['fields']['httpbl_id']['label'] = 'Httpbl ID';
+  $handler->display->display_options['fields']['httpbl_id']['separator'] = '';
   /* Field: HttpBL: Language */
   $handler->display->display_options['fields']['language']['id'] = 'language';
   $handler->display->display_options['fields']['language']['table'] = 'httpbl';
