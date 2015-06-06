@@ -112,13 +112,9 @@ function httpbl_manager_views_bulk_operations_form_alter(&$form, &$form_state, $
   }
   elseif ($form_state['step'] == 'views_bulk_operations_config_form') {
     // Alter the configuration step of the VBO form.
-   dpm($vbo, '$vbo config form');
-   dpm($form, 'vbo config form');
   }
   elseif ($form_state['step'] == 'views_bulk_operations_confirm_form') {
     // Alter the confirmation step of the VBO form.
-    dpm($form, 'vbo confirm form');
-    dpm($vbo, '$vbo confirm form');
 
   }
 }
@@ -301,7 +297,7 @@ function httpbl_manager_change_listing_status_action_submit($form, $form_state) 
 }
 
 /**
- * Changes listing status of a managed IP entity.
+ * Changes expiry of a managed IP entity.
  *
  * @param $entity
  *   A entity object to modify.
