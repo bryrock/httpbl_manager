@@ -33,6 +33,10 @@ function httpbl_manager_views_data_alter(&$data) {
   $data['httpbl']['modified'] = $data['entity_httpbl']['modified'];
 
   // Alter as needed.
+
+  // Define this as a base field.
+  $data['httpbl']['table']['base']['field'] = 'httpbl_id';
+
   $data['httpbl']['hostname']['title'] = t('Host IP');
   $data['httpbl']['httpbl_id']['title'] = t('http:bl ID');
   $data['httpbl']['httpbl_id']['help'] = t('The unique ID of the managed host ip.');
@@ -44,4 +48,5 @@ function httpbl_manager_views_data_alter(&$data) {
   $data['httpbl']['uid']['field']['handler'] = 'views_handler_field_user';
   $data['httpbl']['created']['field']['handler'] = 'views_handler_field_date';
   $data['httpbl']['modified']['field']['handler'] = 'views_handler_field_date';
+
 }

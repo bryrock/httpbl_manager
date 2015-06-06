@@ -41,9 +41,7 @@ function httpbl_manager_entity_info() {
       'access callback' => 'managed_ips_access',
       'uri callback' => 'entity_class_uri',
       'module' => 'httpbl_manager',
-//      'views controller class' => '`',
       'admin ui' => array(
-        'path' => 'admin/structure/httpbl-managed-ips',
         'access callback' => 'managed_ips_access',
       ),
     ),
@@ -70,7 +68,7 @@ function httpbl_manager_permission() {
 }
 
 /**
- * Access callback for HttpBL Manager.
+ * Access callback for http:BL Manager.
  *
  * Determines whether the given user has access to HttpBL Manager functionality.
  *
@@ -102,4 +100,231 @@ function managed_ips_access($op, $type = NULL, $account = NULL) {
  * Implements hook_menu_alter(&$items).
  */
 function httpbl_manager_menu_alter(&$items) {
+}
+
+/**
+ * Implements hook_views_bulk_operations_form_alter().
+ */
+function httpbl_manager_views_bulk_operations_form_alter(&$form, &$form_state, $vbo) {
+  if ($form_state['step'] == 'views_form_views_form') {
+    // Alter the first step of the VBO form (the selection page).
+    $form['select']['#title'] = t('Http:BL Manager Bulk operations');
+  }
+  elseif ($form_state['step'] == 'views_bulk_operations_config_form') {
+    // Alter the configuration step of the VBO form.
+   dpm($vbo, '$vbo config form');
+   dpm($form, 'vbo config form');
+  }
+  elseif ($form_state['step'] == 'views_bulk_operations_confirm_form') {
+    // Alter the confirmation step of the VBO form.
+    dpm($form, 'vbo confirm form');
+    dpm($vbo, '$vbo confirm form');
+
+  }
+}
+
+/**
+ * Implements hook_action_info().
+ */
+function httpbl_manager_action_info() {
+  return array(
+    'httpbl_manager_change_listing_status_action' => array(
+      'type' => 'entity',
+      'label' => t('Change the listing status for a managed IP'),
+      'configurable' => TRUE,
+      'pass rows' => TRUE,
+      'behavior' => array('changes_property'),
+      'triggers' => array('entity_presave'),
+    ),
+    'httpbl_manager_change_expiry_action' => array(
+      'type' => 'entity',
+      'label' => t('Change the expiration for a managed IP'),
+      'configurable' => TRUE,
+      'pass rows' => TRUE,
+      'behavior' => array('changes_property'),
+      'triggers' => array('entity_presave'),
+    ),
+  );
+}
+
+/**
+ * Changes listing status of a managed IP entity.
+ *
+ * @param $entity
+ *   A entity object to modify.
+ * @param $context
+ *   Array with the following elements:
+ *   the following elements:
+ *   - (nothing particularly useful, yet).
+ *
+ * @see httpbl_manager_change_listing_status_action_form()
+ * @see httpbl_manager_change_listing_status_action_validate()
+ * @see httpbl_manager_change_listing_status_action_submit()
+ * @ingroup actions
+ *
+ * @TODO - This should also update blocked Ips on blacklisted
+ *         or check that option in httpbl.
+ */
+function httpbl_manager_change_listing_status_action($entity, $context) {
+  global $user;
+  $list_options = array(
+    'whitelisted' => HTTPBL_LIST_SAFE,
+    'blacklisted' => HTTPBL_LIST_BLACK,
+    'greylisted'  => HTTPBL_LIST_GREY,
+  );
+
+  $entity->status = $context['listed_status'];
+  $entity->modified = REQUEST_TIME;
+  $entity->uid = $user->uid;
+  $listed_status = array_search($entity->status, $list_options);
+
+  watchdog('httpbl_manager action', 'Changed @type managed ip %ip to %listed.', array('@type' =>  $entity->type, '%ip' => $entity->hostname, '%listed' => $listed_status));
+}
+
+/**
+ * Generates the settings form for httpbl_manager_change_listing_status_action().
+ *
+ * @param $context
+ *   Array of additional information about what triggered the action. Includes
+ *   the following elements:
+ *   - (nothing particularly useful, yet).
+ *
+ * @see httpbl_manager_change_listing_status_action_submit()
+ * @see httpbl_manager_change_listing_status_action_validate()
+ *
+ * @ingroup forms
+ */
+function httpbl_manager_change_listing_status_action_form($context) {
+  $description = t('The listing status you want to assign to this managed IP.');
+  $listed_status = '';
+
+  // Note: Couldn't find anything useful in $context, so this test should fail
+  // to find a default value.
+  if (isset($context['listed_status'])) {
+    $listed_status = array_search($entity->status, $list_options);
+  }
+
+  $list_options = array(
+    'whitelisted' => HTTPBL_LIST_SAFE,
+    'blacklisted' => HTTPBL_LIST_BLACK,
+    'greylisted'  => HTTPBL_LIST_GREY,
+  );
+
+  $options = array_keys($list_options);
+  $form['listed_status'] = array(
+    '#type' => 'select',
+    '#title' => t('List Status'),
+    '#default_value' => $listed_status,
+    '#options' => $options,
+    '#description' => $description,
+  );
+  return $form;
+}
+
+/**
+ * Validates settings form for httpbl_manager_change_listing_status_action().
+ *
+ * @see httpbl_manager_change_listing_status_action_submit()
+ */
+function httpbl_manager_change_listing_status_action_validate($form, $form_state) {
+/*
+  if ($form_state['values']['listed_status'] == HTTPBL_LIST_BLACK) {
+    form_set_error('listed_status', t('You can\'t blacklist nice people!'));
+  }
+*/
+}
+
+/**
+ * Saves settings form for httpbl_manager_change_listing_status_action().
+ *
+ * @see httpbl_manager_change_listing_status_action_validate()
+ */
+function httpbl_manager_change_listing_status_action_submit($form, $form_state) {
+  return array('listed_status' => $form_state['values']['listed_status']);
+}
+
+/**
+ * Changes listing status of a managed IP entity.
+ *
+ * @param $entity
+ *   A entity object to modify.
+ * @param $context
+ *   Array with the following elements:
+ *   the following elements:
+ *   - (nothing particularly useful, yet).
+ *
+ * @see httpbl_manager_change_expiry_action_form()
+ * @see httpbl_manager_change_expiry_action_validate()
+ * @see httpbl_manager_change_expiry_action_submit()
+ * @ingroup actions
+ */
+function httpbl_manager_change_expiry_action($entity, $context) {
+  global $user;
+
+  $extended = $context['listed_expiry'];
+  $extended = REQUEST_TIME + $extended;
+  $entity->expire = $extended;
+  $entity->modified = REQUEST_TIME;
+  $entity->uid = $user->uid;
+  $new_expiry = $entity->expire;
+
+  watchdog('httpbl_manager action', 'Changed @type managed ip %ip expiration to %expired.', array('@type' =>  $entity->type, '%ip' => $entity->hostname, '%expired' => format_date($new_expiry)));
+}
+
+/**
+ * Generates the settings form for httpbl_manager_change_expiry_action().
+ *
+ * @param $context
+ *   Array of additional information about what triggered the action. Includes
+ *   the following elements:
+ *   - (nothing particularly useful, yet).
+ *
+ * @see httpbl_manager_change_expiry_action_validate()
+ * @see httpbl_manager_change_expiry_action_submit()
+ *
+ * @ingroup forms
+ */
+function httpbl_manager_change_expiry_action_form($context) {
+  $disclaimer = t('I understand I am defeating the purpose of using httpbl and Honeypot.Org to manage these IPs for me.');
+  $description = t('The new expiration date for this managed IP. This will be an added offset from now.  The default time value is based on the length of time in your admin settings in http:BL for blacklisting.');
+
+  $offset_options = drupal_map_assoc(array(10800, 21600, 32400, 43200, 86400, 172800, 259200, 604800, 1209600, 1814400, 2419200, 7257600, 15724800, 31536000, 63072000, 94608000, 157680000, 315360000), 'format_interval');
+
+  $form['listed_expiry'] = array(
+    '#type' => 'select', 
+    '#title' => t('New expiry is NOW + '), 
+    '#default_value' => variable_get('httpbl_blacklist_offset', 31536000), 
+    '#options' => $offset_options, 
+    '#description' => $description,
+  );
+  $form['disclaimer'] = array(
+    '#type' => 'checkbox', 
+    '#title' => t('Extended time disclaimer:'), 
+    '#default_value' => FALSE, 
+    '#description' => $disclaimer,
+  );
+  return $form;
+}
+
+/**
+ * Validates settings form for httpbl_manager_change_expiry_action().
+ *
+ * @see httpbl_manager_change_expiry_action_submit()
+ */
+function httpbl_manager_change_expiry_action_validate($form, $form_state) {
+  // Find the current default expiry on this site for blacklisting.
+  $blacklist_default = variable_get('httpbl_blacklist_offset', 31536000);
+
+  if ($form_state['values']['listed_expiry'] > $blacklist_default && !$form_state['values']['disclaimer']) {
+    form_set_error('listed_expiry', t('Please acknowledge the disclaimer.'));
+  }
+}
+
+/**
+ * Saves settings form for httpbl_manager_change_expiry_action().
+ *
+ * @see httpbl_manager_change_expiry_action_validate()
+ */
+function httpbl_manager_change_expiry_action_submit($form, $form_state) {
+  return array('listed_expiry' => $form_state['values']['listed_expiry']);
 }
