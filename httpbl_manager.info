@@ -2,8 +2,9 @@ name = Http:BL Manager
 description = Provides entity management for IPs cached by Http:BL.
 package = "Spam control"
 core = 7.x
-#configure = admin/config/people/httpbl_manager
+
 dependencies[] = entity
 dependencies[] = httpbl
 dependencies[] = views_bulk_operations
 files[] = views/httpbl_manager.views.inc
+files[] = views/httpbl_manager.views_default.inc
