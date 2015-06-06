@@ -236,16 +236,14 @@ function httpbl_manager_change_listing_status_action($entity, $context) {
  *
  * @ingroup forms
  */
-function httpbl_manager_change_listing_status_action_form($context) {
+function httpbl_manager_change_listing_status_action_form($entity, $context) {
   $description = t('The listing status you want to assign to this managed IP.');
   $description_block_option = t('Http:bl has an admin setting option to also add blacklisted IPs to Drupal\'s "blocked_ips" table. Check this if you want to ensure a blacklisted IP is added, even if that is not your site\'s default.');
   $listed_status = '';
 
-  // Note: Couldn't find anything useful in $context, so this test should fail
-  // to find a default value.
-  if (isset($context['listed_status'])) {
-    $listed_status = array_search($entity->status, $list_options);
-  }
+  $selection = array_keys($context['selection']);
+  $selection_entity = $entity['view']->result[$selection[0]]->httpbl_id;
+  $this_entity = entity_load_single('httpbl', $selection_entity);
 
   $list_options = array(
     'whitelisted' => HTTPBL_LIST_SAFE,
@@ -253,11 +251,16 @@ function httpbl_manager_change_listing_status_action_form($context) {
     'greylisted'  => HTTPBL_LIST_GREY,
   );
 
+  if (isset($this_entity->status)) {
+    $listed_status = array_search($this_entity->status, $list_options);
+  }
+
   $options = array_keys($list_options);
+
   $form['listed_status'] = array(
     '#type' => 'select',
     '#title' => t('List Status'),
-    '#default_value' => $listed_status,
+    '#default_value' => $list_options[$listed_status],
     '#options' => $options,
     '#description' => $description,
   );
