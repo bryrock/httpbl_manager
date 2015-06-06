@@ -162,8 +162,6 @@ function httpbl_manager_action_info() {
  * @see httpbl_manager_change_listing_status_action_submit()
  * @ingroup actions
  *
- * @TODO - This should also update blocked Ips on blacklisted
- *         or check that option in httpbl.
  */
 function httpbl_manager_change_listing_status_action($entity, $context) {
   global $user;
@@ -179,6 +177,40 @@ function httpbl_manager_change_listing_status_action($entity, $context) {
   $listed_status = array_search($entity->status, $list_options);
 
   watchdog('httpbl_manager action', 'Changed @type managed ip %ip to %listed.', array('@type' =>  $entity->type, '%ip' => $entity->hostname, '%listed' => $listed_status));
+
+  // Now check whether to also add blacklisted IPs to drupal's blocked_ips table.
+  $blocked_ip = FALSE;
+  $remove_blocked_ip = FALSE;
+  $already_banned = _httpbl_banned_check($entity->hostname);
+  $httpbl_cache = variable_get('httpbl_cache', HTTPBL_CACHE_OFF);
+
+  if (module_exists('httpbl') && $context['block_ip'] && $entity->status == HTTPBL_LIST_BLACK) {
+    if (!$already_banned) {
+      $blocked_ip = TRUE;
+    }
+  }
+  elseif (module_exists('httpbl') && $httpbl_cache == HTTPBL_CACHE_DBDRUPAL && $entity->status == HTTPBL_LIST_BLACK) {
+    if (!$already_banned) {
+      $blocked_ip = TRUE;
+    }
+  }
+
+  if ($blocked_ip) {
+    db_insert('blocked_ips')
+      ->fields(array('ip' => $entity->hostname))
+      ->execute();
+
+    watchdog('httpbl_manager action', 'Added IP (%ip) to site banned IPs', array('%ip' => $entity->hostname), WATCHDOG_WARNING, FALSE);
+  }
+
+  // Now check whether to remove a blocked IP that no longer belongs in drupal's blocked_ips table.
+  if (module_exists('httpbl') && $entity->status != HTTPBL_LIST_BLACK && $already_banned) {
+    db_delete('blocked_ips')
+      ->condition('ip', $entity->hostname)
+      ->execute();
+
+    watchdog('httpbl_manager action', 'Removed IP (%ip) from site banned IPs', array('%ip' => $entity->hostname), WATCHDOG_WARNING, FALSE);
+  }
 }
 
 /**
@@ -196,6 +228,7 @@ function httpbl_manager_change_listing_status_action($entity, $context) {
  */
 function httpbl_manager_change_listing_status_action_form($context) {
   $description = t('The listing status you want to assign to this managed IP.');
+  $description_block_option = t('Http:bl has an admin setting option to also add blacklisted IPs to Drupal\'s "blocked_ips" table. Check this if you want to ensure a blacklisted IP is added, even if that is not your site\'s default.');
   $listed_status = '';
 
   // Note: Couldn't find anything useful in $context, so this test should fail
@@ -218,6 +251,12 @@ function httpbl_manager_change_listing_status_action_form($context) {
     '#options' => $options,
     '#description' => $description,
   );
+  $form['block_ip'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Also block blacklisted IPs?'),
+    '#default_value' => FALSE,
+    '#description' => $description_block_option,
+  );
   return $form;
 }
 
@@ -227,11 +266,12 @@ function httpbl_manager_change_listing_status_action_form($context) {
  * @see httpbl_manager_change_listing_status_action_submit()
  */
 function httpbl_manager_change_listing_status_action_validate($form, $form_state) {
-/*
-  if ($form_state['values']['listed_status'] == HTTPBL_LIST_BLACK) {
-    form_set_error('listed_status', t('You can\'t blacklist nice people!'));
+  // Get block override option.
+  $block_override = $form_state['values']['block_ip'];
+
+  if ($form_state['values']['listed_status'] != HTTPBL_LIST_BLACK && $block_override) {
+    form_set_error('listed_status', t('You selected the block option but this is not a blacklisted IP'));
   }
-*/
 }
 
 /**
@@ -240,7 +280,11 @@ function httpbl_manager_change_listing_status_action_validate($form, $form_state
  * @see httpbl_manager_change_listing_status_action_validate()
  */
 function httpbl_manager_change_listing_status_action_submit($form, $form_state) {
-  return array('listed_status' => $form_state['values']['listed_status']);
+  $result = array(
+    'listed_status' => $form_state['values']['listed_status'],
+    'block_ip' => $form_state['values']['block_ip'],
+  );
+  return $result;
 }
 
 /**
