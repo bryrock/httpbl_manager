@@ -162,6 +162,8 @@ function httpbl_manager_action_info() {
  * @see httpbl_manager_change_listing_status_action_submit()
  * @ingroup actions
  *
+ * @TODO - When changing list status, set expiry according to httpbl config
+ *         settings.
  */
 function httpbl_manager_change_listing_status_action($entity, $context) {
   global $user;
